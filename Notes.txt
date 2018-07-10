@@ -1,0 +1,21 @@
+CLIs
+
+Overview
+
+Feature list
+
+Links
+
+https://unix.stackexchange.com/questions/430542/are-there-accepted-conventions-for-argv-options-environment-variables-stdin
+
+Feature list
+
+configuration files
+arguments
+options
+environment variables
+help menu
+logging
+sub commands
+
+versioning

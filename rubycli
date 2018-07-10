@@ -1,0 +1,78 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'yaml'
+require 'json'
+
+defaults = {
+  'foo' => 'foo-default',
+  'bar' => 'bar-default',
+  'baz' => false,
+  'verbose' => false,
+  'verbose-env' => false,
+}
+
+config_file = File.join(ENV['HOME'], '.rubycli')
+config = if File.exist?(config_file)
+  YAML.load(File.read(config_file))
+else
+  {}
+end
+
+environment_vars = ENV.select { |k,_| k.match /RUBYCLI/ }
+environment = environment_vars.each_with_object({}) do |(k,v),h|
+  p v
+  option = k.sub(/RUBYCLI_/,"").downcase
+  case option
+  when 'baz', 'verbose', 'verbose-env'
+    h[option] = v.match(/false/i) ? false : true
+  else
+    h[option] = v
+  end
+end
+
+options = defaults.merge(config.merge(environment))
+
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: rubycli [options] [arg...]"
+
+  opts.on("-f", "--foo FOO", "Some foo flag") do |f|
+    options['foo'] = f
+  end
+
+  opts.on("-b", "--bar BAR", "Some bar flag") do |b|
+    options['bar'] = b
+  end
+
+  opts.on("-z", "--baz", "Some baz switch") do
+    options['bar'] = true
+  end
+
+  opts.on_tail("--verbose-env", "Render ENV in output") do
+    options['verbose-env'] = true
+  end
+
+  opts.on_tail("--verbose", "Output some logging cruft") do
+    options['verbose'] = true
+  end
+
+  opts.on_tail("-h", "--help", "Print this help") do
+    puts opts
+    exit 0
+  end
+end
+option_parser.parse!
+
+output = {
+  'defaults' => defaults,
+  'config_file' => config_file,
+  'config' => config,
+  'environment_vars' => environment_vars,
+  'environment' => environment,
+  'options' => options,
+  'ARGV' => ARGV,
+}
+output['ENV'] = ENV.to_h if options['verbose-env']
+STDERR.puts "logging cruft..." if options['verbose']
+
+puts JSON.pretty_generate(output)
